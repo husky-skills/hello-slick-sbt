@@ -1,1 +1,9 @@
-This is a template for [Typesafe Activator](http://typesafe.com/platform/getstarted).
+
+# Hello Slick Example
+
+
+### Compile
+`sbt compile`
+
+### Run Example
+`sbt run`
