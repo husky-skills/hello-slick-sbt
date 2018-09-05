@@ -1,9 +1,10 @@
-import scala.concurrent.{Await, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.Duration
 import slick.backend.DatabasePublisher
 import slick.driver.H2Driver
 import slick.driver.H2Driver.api._
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 // The main application
 object HelloSlick extends App {
@@ -23,7 +24,7 @@ object HelloSlick extends App {
 
       // Insert some suppliers
       suppliers += Supplier(101, "Acme, Inc.", "99 Market Street", "Groundsville", "CA", "95199"),
-      suppliers += Supplier( 49, "Superior Coffee", "1 Party Place", "Mendocino", "CA", "95460"),
+      suppliers += Supplier(49, "Superior Coffee", "1 Party Place", "Mendocino", "CA", "95460"),
       suppliers += Supplier(150, "The High Ground", "100 Coffee Lane", "Meadows", "CA", "93966")
     )
 
@@ -31,20 +32,13 @@ object HelloSlick extends App {
     val f = setupFuture.flatMap { _ =>
 
       // Insert some coffees (using JDBC's batch insert feature)
-      val insertAction: DBIO[Option[Int]] = coffees ++= Seq (
-        Coffee("Colombian",         101, 7.99, 0, 0),
-        Coffee("French_Roast",       49, 8.99, 0, 0),
-        Coffee("Espresso",          150, 9.99, 0, 0),
-        Coffee("Colombian_Decaf",   101, 8.99, 0, 0),
-        Coffee("French_Roast_Decaf", 49, 9.99, 0, 0)
+      val insertAction: DBIO[Option[Int]] = coffees ++= Seq(
+        Coffee("Colombian", 101, 7.99, 0, 0, 0),
+        Coffee("French_Roast", 49, 8.99, 0, 0, 0),
+        Coffee("Espresso", 150, 9.99, 0, 0, 0),
+        Coffee("Colombian_Decaf", 101, 8.99, 0, 0, 0),
+        Coffee("French_Roast_Decaf", 49, 9.99, 0, 0, 0)
       )
-
-//      val insertQuery = coffees returning coffees.map(_.id) into ((coffee, id) => coffee.copy(id = id))
-//
-//      def create(name: String, price: Double) : Future[Coffee] = {
-//        val action = insertQuery += Item(0, name, price)
-//        db.run(action)
-//      }
 
       val insertAndPrintAction: DBIO[Unit] = insertAction.map { coffeesInsertResult =>
         // Print the number of rows inserted
@@ -114,7 +108,7 @@ object HelloSlick extends App {
       /* Delete */
 
       // Construct a delete query that deletes coffees with a price less than 8.0
-      val deleteQuery: Query[Coffees,Coffee, Seq] =
+      val deleteQuery: Query[Coffees, Coffee, Seq] =
         coffees.filter(_.price < 8.0)
 
       val deleteAction = deleteQuery.delete
@@ -198,5 +192,15 @@ object HelloSlick extends App {
     }
     Await.result(f, Duration.Inf)
 
+    val insertQuery = coffees returning coffees.map(_.id) into ((coffee, id) => coffee.copy(id = id))
+
+    def create: Future[Coffee] = {
+      val action = insertQuery += Coffee("Mahendra Special", 49, 9.99, 0, 0, 0)
+      db.run(action)
+    }
+
+    create.onSuccess {
+      case coffee: Coffee => println(s"inserted coffee with auto id $coffee")
+    }
   } finally db.close
 }
